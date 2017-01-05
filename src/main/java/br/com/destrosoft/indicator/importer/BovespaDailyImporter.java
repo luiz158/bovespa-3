@@ -1,6 +1,8 @@
 package br.com.destrosoft.indicator.importer;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,152 +25,156 @@ import br.com.destrosoft.entity.MarketDaily;
 
 public class BovespaDailyImporter {
 
-    private static final Logger LOG = Logger.getLogger(BovespaDailyImporter.class);
+	private static final Logger LOG = Logger.getLogger(BovespaDailyImporter.class);
 
-    private static String BDI = "http://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_D";
+	private static String BDI = "http://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_D";
 
-    private EntityManagerFactory FACTORY = Persistence.createEntityManagerFactory("market");
+	private EntityManagerFactory FACTORY = Persistence.createEntityManagerFactory("market");
 
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
-        try {
-            LOG.info("Begin");
+		try {
+			LOG.info("Begin");
 
-            BovespaDailyImporter importer = new BovespaDailyImporter();
+			BovespaDailyImporter importer = new BovespaDailyImporter();
 
-            importer.updateDaily();
+			importer.updateDaily();
 
-            LOG.info("done");
-            System.exit(0);
-        } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-            System.exit(-1);
-        }
-    }
+			LOG.info("done");
+			System.exit(0);
+		} catch (Exception e) {
+			LOG.error(e.getMessage(), e);
+			System.exit(-1);
+		}
+	}
 
-    /**
-     * Atualização diária
-     * 
-     * @throws ParseException
-     */
-    private void updateDaily() throws ImporterException {
-        LOG.info("[DAILY] Updating...");
+	/**
+	 * Atualização diária
+	 * 
+	 * @throws IOException
+	 * 
+	 * @throws ParseException
+	 */
+	private void updateDaily() throws ImporterException, IOException {
+		LOG.info("[DAILY] Updating...");
 
-        Date startDate = new Date(System.currentTimeMillis() - (1L * 24L * 60L * 60L * 1000L));
+		// Efetua leitura da última data carregada
+		BufferedReader bufferedReader = new BufferedReader(new FileReader("lastDate"));
+		String lastDate = bufferedReader.readLine();
+		bufferedReader.close();
 
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(System.currentTimeMillis());
-        cal.set(Calendar.HOUR, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date now = cal.getTime();
+		// Por padrão sempre pega os últimos 30 pregões, caso lastDate esteja
+		// vazio
+		Date startDate = new Date(System.currentTimeMillis() - (30L * 24L * 60L * 60L * 1000L));
 
-        while (startDate.before(now)) {
+		if (lastDate != null) {
+			// Última data mais o dia do pregão atual
+			startDate = new Date(Long.valueOf(String.valueOf(lastDate)) + (1L * 24L * 60L * 60L * 1000L));
+		}
 
-            this.updateBovespa(startDate);
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(System.currentTimeMillis() + (1L * 24L * 60L * 60L * 1000L));
+		cal.set(Calendar.HOUR, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		Date now = cal.getTime();
 
-            startDate = new Date(startDate.getTime() + 24L * 60L * 60L * 1000L);
-        }
+		while (startDate.before(now)) {
 
-        LOG.info("[DAILY] done");
-    }
+			this.updateBovespa(startDate);
 
-    /**
-     * Atualiza dados de boletim diário da Bovespa na base de dados
-     * 
-     * @param date
-     * 
-     * @throws Exception
-     */
-    private void updateBovespa(Date date) throws ImporterException {
+			startDate = new Date(startDate.getTime() + 24L * 60L * 60L * 1000L);
+		}
 
-        try {
+		// Salva ultima data carregada
+		FileWriter fw = new FileWriter("lastDate");
+		fw.write(String.valueOf(startDate.getTime()));
+		fw.close();
 
-            HttpClient client = new HttpClient();
+		LOG.info("[DAILY] done");
+	}
 
-            SimpleDateFormat sf = new SimpleDateFormat("ddMMyyyy");
+	/**
+	 * Atualiza dados de boletim diário da Bovespa na base de dados
+	 * 
+	 * @param date
+	 * 
+	 * @throws Exception
+	 */
+	private void updateBovespa(Date date) throws ImporterException {
 
-            String fileName = BDI + sf.format(date) + ".zip";
+		try {
 
-            GetMethod get = new GetMethod(fileName);
+			HttpClient client = new HttpClient();
 
-            LOG.info("[BDI] date: " + date + ", fileName: " + fileName);
+			SimpleDateFormat sf = new SimpleDateFormat("ddMMyyyy");
 
-            int r = client.executeMethod(get);
+			String fileName = BDI + sf.format(date) + ".zip";
 
-            if (r != 200) {
-                LOG.warn("[BDI] Problemas em baixar arquivo BDI, date: " + date + ", fileName: " + fileName);
-                return;
-            }
+			GetMethod get = new GetMethod(fileName);
 
-            InputStream in = get.getResponseBodyAsStream();
+			LOG.info("[BDI] date: " + date + ", fileName: " + fileName);
 
-            ZipInputStream zIn = new ZipInputStream(in);
+			int r = client.executeMethod(get);
 
-            // Posiciona ponteiro
-            zIn.getNextEntry();
+			if (r != 200) {
+				LOG.warn("[BDI] Problemas em baixar arquivo BDI, date: " + date + ", fileName: " + fileName);
+				return;
+			}
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(zIn));
+			InputStream in = get.getResponseBodyAsStream();
 
-            String line = null;
+			ZipInputStream zIn = new ZipInputStream(in);
 
-            EntityManager em = FACTORY.createEntityManager();
+			// Posiciona ponteiro
+			zIn.getNextEntry();
 
-            try {
-                em.getTransaction().begin();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(zIn));
 
-                while ((line = reader.readLine()) != null) {
+			String line = null;
 
-                    if (line.startsWith("01")) {
+			EntityManager em = FACTORY.createEntityManager();
 
-                        // Inseri dados de uma nova empresa
-                        // Company c = new Company(line.substring(57,
-                        // 61).trim());
-                        // c.setName(line.substring(34, 46).trim());
-                        // em.merge(c);
+			try {
+				em.getTransaction().begin();
 
-                        // Inseri dados dos tipos de papeis da empresa
-                        // CompanyStock cs = new CompanyStock();
-                        // cs.setCode(line.substring(57, 69).trim());
-                        // cs.setCompany(c);
-                        // cs.setMarketTypeId(Integer.parseInt(line.substring(69,
-                        // 72).trim()));
-                        // em.merge(cs);
+				while ((line = reader.readLine()) != null) {
 
-                        MarketDaily md = new MarketDaily();
-                        md.setDate(date);
+					if (line.startsWith("01")) {
+						MarketDaily md = new MarketDaily();
+						md.setDate(date);
 
-                        md.setCode(line.substring(12, 24).trim());
+						md.setCode(line.substring(12, 24).trim());
 
-                        md.setPriceOpen(Double.parseDouble(line.substring(56, 69)) / 100.0);
-                        md.setPriceMax(Double.parseDouble(line.substring(69, 82)) / 100.0);
-                        md.setPriceMin(Double.parseDouble(line.substring(82, 95)) / 100.0);
-                        md.setPriceAverage(Double.parseDouble(line.substring(95, 108)) / 100.0);
-                        md.setPriceClose(Double.parseDouble(line.substring(108, 121)) / 100.0);
+						md.setPriceOpen(Double.parseDouble(line.substring(56, 69)) / 100.0);
+						md.setPriceMax(Double.parseDouble(line.substring(69, 82)) / 100.0);
+						md.setPriceMin(Double.parseDouble(line.substring(82, 95)) / 100.0);
+						md.setPriceAverage(Double.parseDouble(line.substring(95, 108)) / 100.0);
+						md.setPriceClose(Double.parseDouble(line.substring(108, 121)) / 100.0);
 
-                        md.setTotalTrades(Integer.parseInt(line.substring(147, 152)));
-                        md.setTotalQuantityStockTraded(Long.parseLong(line.substring(152, 170)));
-                        md.setTotalVolume(new BigDecimal(Double.parseDouble(line.substring(170, 188)) / 100.0));
+						md.setTotalTrades(Integer.parseInt(line.substring(147, 152)));
+						md.setTotalQuantityStockTraded(Long.parseLong(line.substring(152, 170)));
+						md.setTotalVolume(new BigDecimal(Double.parseDouble(line.substring(170, 188)) / 100.0));
 
-                        em.merge(md);
-                    }
-                }
+						em.merge(md);
+					}
+				}
 
-                em.getTransaction().commit();
-            } catch (Exception e) {
-                if (em != null && em.getTransaction().isActive()) {
-                    em.getTransaction().rollback();
-                }
-                LOG.error(e.getMessage(), e);
-            } finally {
-                if (em != null && em.isOpen()) {
-                    em.close();
-                }
-            }
-        } catch (IOException e) {
-            throw new ImporterException(e.getMessage(), e);
-        }
-    }
+				em.getTransaction().commit();
+			} catch (Exception e) {
+				if (em != null && em.getTransaction().isActive()) {
+					em.getTransaction().rollback();
+				}
+				LOG.error(e.getMessage(), e);
+			} finally {
+				if (em != null && em.isOpen()) {
+					em.close();
+				}
+			}
+		} catch (IOException e) {
+			throw new ImporterException(e.getMessage(), e);
+		}
+	}
 
 }
