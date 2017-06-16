@@ -63,9 +63,9 @@ public class BovespaDailyImporter {
 		String lastDate = bufferedReader.readLine();
 		bufferedReader.close();
 
-		// Por padrão sempre pega os últimos 30 pregões, caso lastDate esteja
+		// Por padrão sempre pega os últimos 365 pregões, caso lastDate esteja
 		// vazio
-		Date startDate = new Date(System.currentTimeMillis() - (30L * 24L * 60L * 60L * 1000L));
+		Date startDate = new Date(System.currentTimeMillis() - (365L * 24L * 60L * 60L * 1000L));
 
 		if (lastDate != null) {
 			// Última data mais o dia do pregão atual
@@ -145,7 +145,9 @@ public class BovespaDailyImporter {
 						MarketDaily md = new MarketDaily();
 						md.setDate(date);
 
-						md.setCode(line.substring(12, 24).trim());
+						md.setCode(line.substring(12, 23).trim());
+
+						md.setType(Integer.valueOf(line.substring(24, 27).trim()));
 
 						md.setPriceOpen(Double.parseDouble(line.substring(56, 69)) / 100.0);
 						md.setPriceMax(Double.parseDouble(line.substring(69, 82)) / 100.0);

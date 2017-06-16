@@ -22,120 +22,130 @@ import javax.persistence.TemporalType;
 @IdClass(value = MarketDailyPK.class)
 public class MarketDaily implements Serializable {
 
-    private static final long serialVersionUID = -1854868867102647734L;
+	private static final long serialVersionUID = -1854868867102647734L;
 
-    @Id
-    @Temporal(TemporalType.DATE)
-    @Column(name = "date")
-    private Date date;
+	@Id
+	@Temporal(TemporalType.DATE)
+	@Column(name = "date")
+	private Date date;
 
-    @Id
-    @Column(name = "code")
-    private String code;
+	@Id
+	@Column(name = "code")
+	private String code;
 
-    @Column(name = "price_open")
-    private double priceOpen;
+	@Column(name = "market_type_id")
+	private int type;
 
-    @Column(name = "price_max")
-    private double priceMax;
+	@Column(name = "price_open")
+	private double priceOpen;
 
-    @Column(name = "price_min")
-    private double priceMin;
+	@Column(name = "price_max")
+	private double priceMax;
 
-    @Column(name = "price_average")
-    private double priceAverage;
+	@Column(name = "price_min")
+	private double priceMin;
 
-    @Column(name = "price_close")
-    private double priceClose;
+	@Column(name = "price_average")
+	private double priceAverage;
 
-    @Column(name = "total_trades")
-    private int totalTrades;
+	@Column(name = "price_close")
+	private double priceClose;
 
-    @Column(name = "total_quantity_stock_traded")
-    private long totalQuantityStockTraded;
+	@Column(name = "total_trades")
+	private int totalTrades;
 
-    @Column(name = "total_volume")
-    private BigDecimal totalVolume;
+	@Column(name = "total_quantity_stock_traded")
+	private long totalQuantityStockTraded;
 
-    public Date getDate() {
-        return date;
-    }
+	@Column(name = "total_volume")
+	private BigDecimal totalVolume;
 
-    public void setDate(Date date) {
-        this.date = date;
-    }
+	public Date getDate() {
+		return date;
+	}
 
-    public String getCode() {
-        return code;
-    }
+	public void setDate(Date date) {
+		this.date = date;
+	}
 
-    public void setCode(String code) {
-        this.code = code;
-    }
+	public String getCode() {
+		return code;
+	}
 
-    public double getPriceOpen() {
-        return priceOpen;
-    }
+	public void setCode(String code) {
+		this.code = code;
+	}
 
-    public void setPriceOpen(double priceOpen) {
-        this.priceOpen = priceOpen;
-    }
+	public int getType() {
+		return type;
+	}
 
-    public double getPriceMax() {
-        return priceMax;
-    }
+	public void setType(int type) {
+		this.type = type;
+	}
 
-    public void setPriceMax(double priceMax) {
-        this.priceMax = priceMax;
-    }
+	public double getPriceOpen() {
+		return priceOpen;
+	}
 
-    public double getPriceMin() {
-        return priceMin;
-    }
+	public void setPriceOpen(double priceOpen) {
+		this.priceOpen = priceOpen;
+	}
 
-    public void setPriceMin(double priceMin) {
-        this.priceMin = priceMin;
-    }
+	public double getPriceMax() {
+		return priceMax;
+	}
 
-    public double getPriceAverage() {
-        return priceAverage;
-    }
+	public void setPriceMax(double priceMax) {
+		this.priceMax = priceMax;
+	}
 
-    public void setPriceAverage(double priceAverage) {
-        this.priceAverage = priceAverage;
-    }
+	public double getPriceMin() {
+		return priceMin;
+	}
 
-    public double getPriceClose() {
-        return priceClose;
-    }
+	public void setPriceMin(double priceMin) {
+		this.priceMin = priceMin;
+	}
 
-    public void setPriceClose(double priceClose) {
-        this.priceClose = priceClose;
-    }
+	public double getPriceAverage() {
+		return priceAverage;
+	}
 
+	public void setPriceAverage(double priceAverage) {
+		this.priceAverage = priceAverage;
+	}
 
-    public BigDecimal getTotalVolume() {
-        return totalVolume;
-    }
+	public double getPriceClose() {
+		return priceClose;
+	}
 
-    public void setTotalVolume(BigDecimal totalVolume) {
-        this.totalVolume = totalVolume;
-    }
+	public void setPriceClose(double priceClose) {
+		this.priceClose = priceClose;
+	}
 
-    public int getTotalTrades() {
-        return totalTrades;
-    }
+	public BigDecimal getTotalVolume() {
+		return totalVolume;
+	}
 
-    public void setTotalTrades(int totalTrades) {
-        this.totalTrades = totalTrades;
-    }
+	public void setTotalVolume(BigDecimal totalVolume) {
+		this.totalVolume = totalVolume;
+	}
 
-    public long getTotalQuantityStockTraded() {
-        return totalQuantityStockTraded;
-    }
+	public int getTotalTrades() {
+		return totalTrades;
+	}
 
-    public void setTotalQuantityStockTraded(long totalQuantityStockTraded) {
-        this.totalQuantityStockTraded = totalQuantityStockTraded;
-    }
+	public void setTotalTrades(int totalTrades) {
+		this.totalTrades = totalTrades;
+	}
+
+	public long getTotalQuantityStockTraded() {
+		return totalQuantityStockTraded;
+	}
+
+	public void setTotalQuantityStockTraded(long totalQuantityStockTraded) {
+		this.totalQuantityStockTraded = totalQuantityStockTraded;
+	}
 
 }
